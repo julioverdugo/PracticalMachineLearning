@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Introduction</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h2>Introduction</h2>
+
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement- a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks.</p>
+
+<p>One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify <strong>how well they do it</strong>. In this data set, the participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: 
+<a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> </p>
+
+<p>In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants toto predict the manner in which praticipants did the exercise.</p>
+
+<p>The dependent variable or response is the &quot;classe&quot; variable in the training set.</p>
+
+<h2>Pre-Processing</h2>
+
+<p>The training data and testing datafor this project are located in: </p>
+
+<p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv</a></p>
+
+<p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a></p>
+
+<p>The first step was to import the train and test datasets:</p>
+
+<pre><code class="r, message=FALSE">library(caret)
+library(randomForest)
+setwd(&quot;C:/Users/Julio/Documents/Practical Machine Learning/Project&quot;)
+pml_test&lt;-read.csv(&quot;pml-testing.csv&quot;,header=TRUE,sep=&quot;,&quot;)
+pml_train&lt;-read.csv(&quot;pml-training.csv&quot;,header=TRUE,sep=&quot;,&quot;)
+</code></pre>
+
+<p>Then the columns containing only NA values on the test set were removed due they wouldn&#39;t be relevant on the prediction.</p>
+
+<pre><code class="r">test_col&lt;-names(Filter(function(x)!all(is.na(x)), pml_test))
+train_col&lt;-pml_train[,c(test_col[-60],&quot;classe&quot;)]
+</code></pre>
+
+<p>Aditionally, the unrelevants variables were removed (X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window), resulting in a set with 52 predictors variables and 1 dependant variable.</p>
+
+<pre><code class="r">train_col&lt;-train_col[,-c(1:7)]
+</code></pre>
+
+<p>The training set is split in 80% for training and 20% for testing.</p>
+
+<pre><code class="r">intrain &lt;-createDataPartition(y=train_col$classe,p=0.8, list=FALSE)
+training &lt;- train_col[intrain,]
+testing &lt;- train_col[-intrain,]
+</code></pre>
+
+<h2>Cross-Validation</h2>
+
+<p>Random Forest method was selected as the first method to apply. The <strong>rfcv function</strong> from the  randomForest package shows the cross-validated prediction performance of models with sequentially reduced number of predictors (ranked by variable importance) via a nested cross-validation procedure.</p>
+
+<pre><code class="r">cv_train&lt;-rfcv(training[,1:52],training[,53])
+</code></pre>
+
+<p>This function provides the cross-validation estimed error by number of used variables. 52 variables are going to be utilized for the prediction.</p>
+
+<pre><code class="r">cv_train$error.cv 
+</code></pre>
+
+<h2>Model</h2>
+
+<p>Fit the model applying the random forest method. Then <strong>confusionMatrix</strong> provides the function&#39;s output to see how well the model predicted/classified the values in the validation test set and Accuracy.</p>
+
+<pre><code class="r">modFit&lt;-randomForest(classe ~.,data=training)
+prediction &lt;- predict(modFit, newdata=testing, type = &quot;class&quot;)
+confusionMatrix(testing$classe,prediction)
+</code></pre>
+
+<p>The estimated accuracy of the model is 99.72% and the estimated out-of-sample error based on the fitted model applied to the cross validation dataset is 0.28%.</p>
+
+<h2>Prediction</h2>
+
+<p>Considering the obtained accuracy, the random forest is the definitive model. The model is applied to the original testing set. The model output are included below.</p>
+
+<pre><code class="r">prediction_final&lt;-predict(modFit,newdata=pml_test,type=&quot;class&quot;)
+prediction_final
+</code></pre>
+
+</body>
+
+</html>
