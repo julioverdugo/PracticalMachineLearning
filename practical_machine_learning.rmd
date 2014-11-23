@@ -1,0 +1,97 @@
+---
+title: "Practical Machine Learning: Assignment 1"
+output: html_document
+---
+
+
+Introduction
+-------------
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement- a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks.
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify **how well they do it**. In this data set, the participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: 
+http://groupware.les.inf.puc-rio.br/har 
+
+In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants toto predict the manner in which praticipants did the exercise.
+
+The dependent variable or response is the "classe" variable in the training set.
+
+Pre-Processing
+----------------
+
+The training data and testing datafor this project are located in: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The first step was to import the train and test datasets:
+
+```{r, message=FALSE}
+library(caret)
+library(randomForest)
+setwd("C:/Users/Julio/Documents/Practical Machine Learning/Project")
+pml_test<-read.csv("pml-testing.csv",header=TRUE,sep=",")
+pml_train<-read.csv("pml-training.csv",header=TRUE,sep=",")
+```
+
+Then the columns containing only NA values on the test set were removed due they wouldn't be relevant on the prediction.
+
+```{r}
+test_col<-names(Filter(function(x)!all(is.na(x)), pml_test))
+train_col<-pml_train[,c(test_col[-60],"classe")]
+```
+
+Aditionally, the unrelevants variables were removed (X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window), resulting in a set with 52 predictors variables and 1 dependant variable.
+
+```{r}
+train_col<-train_col[,-c(1:7)]
+```
+
+The training set is split in 80% for training and 20% for testing.
+
+```{r}
+intrain <-createDataPartition(y=train_col$classe,p=0.8, list=FALSE)
+training <- train_col[intrain,]
+testing <- train_col[-intrain,]
+```
+
+
+Cross-Validation
+-----------------
+
+Random Forest method was selected as the first method to apply. The **rfcv function** from the  randomForest package shows the cross-validated prediction performance of models with sequentially reduced number of predictors (ranked by variable importance) via a nested cross-validation procedure.
+
+```{r}
+cv_train<-rfcv(training[,1:52],training[,53])
+```
+
+This function provides the cross-validation estimed error by number of used variables. 52 variables are going to be utilized for the prediction.
+
+```{r}
+cv_train$error.cv 
+```
+
+
+Model
+------
+
+Fit the model applying the random forest method. Then **confusionMatrix** provides the function's output to see how well the model predicted/classified the values in the validation test set and Accuracy.
+
+```{r}
+modFit<-randomForest(classe ~.,data=training)
+prediction <- predict(modFit, newdata=testing, type = "class")
+confusionMatrix(testing$classe,prediction)
+```
+
+The estimated accuracy of the model is 99.72% and the estimated out-of-sample error based on the fitted model applied to the cross validation dataset is 0.28%.
+
+Prediction
+------------
+
+Considering the obtained accuracy, the random forest is the definitive model. The model is applied to the original testing set. The model output are included below.
+
+```{r}
+prediction_final<-predict(modFit,newdata=pml_test,type="class")
+prediction_final
+```
